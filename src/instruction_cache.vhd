@@ -60,9 +60,12 @@ architecture arch of instruction_cache is
 
   -- states
   type state_type is (IDLE, COMPARE_TAG, ALLOCATE);
-  signal state        : state_type := IDLE;
-  signal hit          : boolean    := false;
-  signal assignements : integer range 0 to 15 := 0;
+  signal current_state : state_type := IDLE;
+  signal next_state    : state_type := IDLE;
+  signal hit           : boolean    := false;
+  -- signal assignements  : integer range 0 to 15 := 0;
+  signal changed       : std_logic;
+  signal prev_address  : std_logic_vector(31 downto 0);
 begin
   mm : main_memory generic map (filename => "memory_init.txt")
     port map (data    => mm_data,
@@ -71,65 +74,63 @@ begin
               enable  => enable,
               ready   => mm_ready);
 
-  next_state : process(clk, address, mm_address, mm_ready) is
+  state_change : process(clk, enable, changed) is
   begin
     if enable = '1' and rising_edge(clk) then
-      case state is
-        when IDLE => state <= COMPARE_TAG;
-        when COMPARE_TAG =>
-          if hit then
-            state <= IDLE;
-          else
-            state <= ALLOCATE;
-          end if;
-
-        when ALLOCATE =>
-          if mm_ready = '1' and assignements = cache_line'length-1 then
-            state         <= COMPARE_TAG;
-            assignements  <= 0;
-          else
-            assignements <= assignements + 1;
-          end if;
-        when others => state <= COMPARE_TAG;
-      end case;
+      current_state <= next_state;
+      prev_address  <= address;
+    -- report "changing state";
     end if;
-
   end process;
 
   tag          <= address(15 downto 14);
   block_offset <= to_integer(unsigned(address(13 downto 6)));
   word_offset  <= to_integer(unsigned(address(5 downto 2)));
+  changed      <= '0' when prev_address = address else '1';
   -- block_var    <= cache(block_offset);
 
   -- actions : process(address, enable, mm_address, mm_ready)
-  actions : process(clk, mm_ready) is
-  -- variable block_var : block_type;    -- block is a reserved keyword
+  actions : process(clk, current_state, mm_ready) is
+    variable assignements : integer range 0 to 60 := 0;
   begin
-    ready <= '0';
-    data  <= (others => '0');
-    -- report "address: " & to_hstring(address(31 downto 0));
-    -- report "TAG: " & to_hstring(tag);
-    -- report "OFFSET: " & integer'image(block_offset);
-    -- report "WORD OFFSET: " & integer'image(word_offset);
-    -- report "block tag: " & to_hstring(cache(block_offset).tag);
-    case state is
+    case current_state is
       when IDLE =>
         ready <= '1';
-
+        if changed = '1' then
+          ready <= '0', '1' after 5 ns;
+          next_state <= COMPARE_TAG;
+          end if;
       when COMPARE_TAG =>
         if cache(block_offset).valid = '1' and cache(block_offset).tag = tag then
-          hit  <= true after 5 ns;
-          data <= cache(block_offset).data(word_offset) after 5 ns;
+          -- ready      <= '0', '1'                              after 5 ns;
+          data       <= cache(block_offset).data(word_offset);
+          next_state <= IDLE;
+          hit        <= true;
+          report "HIT!";
         else
-          hit <= false after 5 ns;
+          -- ready      <= '0';
+          ready <= '0';
+          next_state <= ALLOCATE;
+          mm_address <= address(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
+          hit        <= false;
+        -- report "MISS :(";
         end if;
 
       when ALLOCATE =>
         mm_address <= address(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
         if rising_edge(mm_ready) then
-          cache(block_offset).valid              <= '1';
-          cache(block_offset).data(assignements) <= mm_data;
-        cache(block_offset).tag <= address(15 downto 14);
+        report "assignemnts: " & integer'image(assignements);
+        cache(block_offset).data(assignements/4) <= mm_data;
+        cache(block_offset).tag                  <= address(15 downto 14);
+        mm_address                               <= address(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
+        if assignements = 4 * (cache_line'length - 1) then
+          cache(block_offset).valid <= '1';
+          next_state                <= COMPARE_TAG;
+          assignements              := 0;
+        else
+          assignements := assignements + 4;
+          next_state   <= ALLOCATE;
+        end if;
         end if;
 
       when others =>

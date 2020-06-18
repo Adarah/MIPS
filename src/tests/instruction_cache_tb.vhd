@@ -21,16 +21,15 @@ architecture arch of instruction_cache_tb is
 begin
   cache : instruction_cache port map (data, address, enable, ready, clk);
   -- address <= (others => '0');
-  clk <= not clk after 80 ns;
+  clk <= not clk after 1.25 ns;
   test  : process
   begin
     enable <= '1';
-    for i in 49280 to 49284 loop
+    for i in 49280 to 49288 loop
       address <= std_logic_vector(to_unsigned(i, 32));
-      -- wait until ready = '1';
-      wait for 1000 ns;
+      wait until ready = '1';
+      -- wait for 800 ns;
     end loop;
-    wait for 1000 ns;
     std.env.finish;
   end process test;
 end architecture;
