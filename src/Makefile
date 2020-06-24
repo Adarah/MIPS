@@ -1,22 +1,10 @@
-##
-# Project Title
-#
-# @file
-# @version 0.1
-
 GHDL := ghdl
 WORKDIR := work
 VERSION := 08
 
 # PACKAGES := src/types.vhd
 TARGETS :=
-TARGETS += main_memory.vhd
-
-# TARGETS += $(wildcard stages/*.vhd)
-# TARGETS += $(wildcard pipes/*.vhd)
-
-# TARGETS += UC.vhd FD.vhd
-
+TARGETS += $(wildcard *.vhd)
 TARGETS += $(wildcard tests/*.vhd)
 
 DEBUG  := 1
@@ -35,11 +23,24 @@ analyse: | $(WORKDIR)
 
 memory_test: | $(WORKDIR)
 	$(GHDL) -e $(GHDLFLAGS) main_memory_tb
-	$(GHDL) -r $(GHDLFLAGS) main_memory_tb --vcd=$(WORKDIR)/$@.vcd
+	$(GHDL) -r $(GHDLFLAGS) main_memory_tb --wave=$(WORKDIR)/$@.ghw
+ifeq ($(VISUAL), 1)
+	gtkwave $(WORKDIR)/$@.ghw
+endif
+
+instruction_cache_test:
+	$(GHDL) -e $(GHDLFLAGS) instruction_cache_tb
+	$(GHDL) -r $(GHDLFLAGS) instruction_cache_tb --wave=$(WORKDIR)/$@.ghw
+ifeq ($(VISUAL), 1)
+	gtkwave $(WORKDIR)/$@.ghw
+endif
+
+instruction_cache_test_fast:
+	$(GHDL) -e $(GHDLFLAGS) instruction_cache_tb
+	$(GHDL) -r $(GHDLFLAGS) instruction_cache_tb --wave=$(WORKDIR)/$@.vcd
 ifeq ($(VISUAL), 1)
 	gtkwave $(WORKDIR)/$@.vcd
 endif
-
 full_test:
 	$(GHDL) -r $(GHDLFLAGS) full_tb --stop-time=8us --vcd=$(WORKDIR)/$@.vcd
 ifeq ($(VISUAL), 1)

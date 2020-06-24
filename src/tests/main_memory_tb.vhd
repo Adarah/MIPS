@@ -26,25 +26,24 @@ architecture main_memory_tb_arch of main_memory_tb is
   signal rw, enable, ready : std_logic;
 
 begin
-  mm        : main_memory generic map (filename => "./memory_init.txt") port map (data, address, rw, enable, ready);
+  mm : main_memory generic map (filename => "./memory_init.txt")
+    port map (data, address, rw, enable, ready);
   testbench : process
   begin
-    for i in 0 to 3 loop
+    for i in 0 to 16 loop
       address <= std_logic_vector(to_unsigned(i, 32));
       rw      <= '0';
       enable  <= '1';
       wait for 100 ns;
     end loop;
 
-    for i in 15 to 16 loop
+    for i in 64 to 65 loop
       address <= std_logic_vector(to_unsigned(i, 32));
       rw      <= '0';
       enable  <= '1';
       wait for 100 ns;
     end loop;
-
-    enable  <= '0';
-    for i in 15 to 16 loop
+    for i in 49276 to 49277 loop
       address <= std_logic_vector(to_unsigned(i, 32));
       rw      <= '0';
       wait for 100 ns;
