@@ -17,7 +17,7 @@ architecture arch of instruction_cache_tb is
   end component;
   signal data, address : std_logic_vector(31 downto 0);
   signal enable, ready : std_logic;
-  signal clk           : std_logic := '0';
+  signal clk           : std_logic := '1';
 begin
   cache : instruction_cache port map (data, address, enable, ready, clk);
   -- address <= (others => '0');

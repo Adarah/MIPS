@@ -47,26 +47,26 @@ begin
       ADDR32  <= std_logic_vector(to_unsigned(i, 32));
       wait until ready = '1';
     end loop;
-    -- for i in 49280 to 49288 loop
-    --   RW     <= '0';  --testando para leitura após escrita --saida esperada FEDCBA98 FEDCBA98 FEDCBA98
-    --   ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-    --   wait until ready = '1';
-    -- end loop;
+    for i in 49280 to 49288 loop
+      RW     <= '0';  --testando para leitura após escrita --saida esperada FEDCBA98 FEDCBA98 FEDCBA98
+      ADDR32 <= std_logic_vector(to_unsigned(i, 32));
+      wait until ready = '1';
+    end loop;
 
-    -- report "terminou de reler os writes";
-    -- for i in 2000 to 2007 loop
-    --   RW      <= '1';                   --testando para miss na escrita
-    --   DATA_IN <= x"EEEEEEEE";
-    --   ADDR32  <= std_logic_vector(to_unsigned(i, 32));
-    --   wait until ready = '1';
-    -- end loop;
-    -- report "terminou write misses";
+    report "terminou de reler os writes";
+    for i in 2000 to 2007 loop
+      RW      <= '1';                   --testando para miss na escrita
+      DATA_IN <= x"EEEEEEEE";
+      ADDR32  <= std_logic_vector(to_unsigned(i, 32));
+      wait until ready = '1';
+    end loop;
+    report "terminou write misses";
 
-    -- for i in 2000 to 2007 loop
-    --   RW     <= '0';  --testando para leitura após escrita (miss) --miss e depois -> EEEEEEEE EEEEEEEE
-    --   ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-    --   wait until ready = '1';
-    -- end loop;
+    for i in 2000 to 2007 loop
+      RW     <= '0';  --testando para leitura após escrita (miss) --miss e depois -> EEEEEEEE EEEEEEEE
+      ADDR32 <= std_logic_vector(to_unsigned(i, 32));
+      wait until ready = '1';
+    end loop;
 
     --testando LRU
     for i in 128 to 136 loop  -- esperase que entre no block 1 do conjutno 2
