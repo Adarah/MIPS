@@ -41,6 +41,14 @@ instruction_cache_test_fast:
 ifeq ($(VISUAL), 1)
 	gtkwave $(WORKDIR)/$@.vcd
 endif
+
+data_cache_test:
+	$(GHDL) -e $(GHDLFLAGS) data_cache_tb
+	$(GHDL) -r $(GHDLFLAGS) data_cache_tb --wave=$(WORKDIR)/$@.ghw
+ifeq ($(VISUAL), 1)
+	gtkwave $(WORKDIR)/$@.ghw
+endif
+
 full_test:
 	$(GHDL) -r $(GHDLFLAGS) full_tb --stop-time=8us --vcd=$(WORKDIR)/$@.vcd
 ifeq ($(VISUAL), 1)
