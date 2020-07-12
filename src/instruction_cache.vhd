@@ -125,7 +125,7 @@ begin
         cache(block_offset).data(assignements/4) <= mm_data;
         cache(block_offset).tag                  <= address(15 downto 14);
         mm_address                               <= address(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
-        if assignements = 4 * (cache_line'length - 1) then
+        if assignements > 4 * (cache_line'length - 1) then
           cache(block_offset).valid <= '1';
           next_state                <= COMPARE_TAG;
           assignements              := 0;
