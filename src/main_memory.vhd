@@ -58,6 +58,7 @@ begin
         data  <= memory(to_integer(unsigned(address) srl 2)) after read_time;
         ready <= '0', '1'                              after read_time;
       elsif rw = '1' then
+        data <= (others => 'Z');
         memory(to_integer(unsigned(address) srl 2)) <= data     after write_time;
         ready                                 <= '0', '1' after write_time;
       end if;
