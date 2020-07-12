@@ -168,31 +168,6 @@ begin
           hit <= false;
         end if;
 
-        -- when IDLE_BUFFER_CHEIO =>
-        --   -- escreve na memoria principal. Pra qualquer acesso, voltar pro estado
-        --   -- compare_tag, exceto se o buffer ficar vazio, entao voltar pra IDLE
-        --   mm_address <= addr_buffer;
-        --   mm_data    <= write_buffer;
-        --   if changed = '1' then
-        --     ready <= '1';
-        --     next_state <= COMPARE_TAG;
-        --   end if;
-        --   if rising_edge(mm_ready) then
-        --     buffer_cheio <= '0';
-        --     next_state <= COMPARE_TAG;
-        --     ready <= '1';
-        --     report "operation: " & to_string(RW);
-        --   end if;
-
-        -- when WRITE_BUFFER_CHEIO =>
-        --   -- esperar ate o buffer ficar vazio, e ai voltar pro compare_tag -> idle_buffer_cheio
-        --   ready <= '0';
-        --   if rising_edge(mm_ready) then
-        --     report "ficou ponrot mm ready";
-        --     buffer_cheio <= '0';
-        --     next_state <= COMPARE_TAG;
-        --   end if;
-
       when ALLOCATE =>
         mm_address <= ADDR32(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
         if cache(conjunto_offset)(0).LRU = '1' then
@@ -245,16 +220,4 @@ begin
 
     end case;
   end process actions;
-
-
-  -- process(mm_data, mm_ready, mm_address, RW, enable) is
-  -- begin
-  --   report "leitura dos valures de entrada para memoria principal";
-  --   report "mm_data: " & to_hstring(mm_data);
-  --   report "mm_ready: " & to_string(mm_ready);
-  --   report "mm_address: " & to_hstring(mm_address);
-  --   report "rw: " & to_string(RW);
-  --   report "enable: " & to_string(enable);
-  --   end process;
-
 end arquitetura;
