@@ -1,13 +1,12 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
-use std.textio.all;
 
-entity bufferTeste is
-end bufferTeste;
+entity write_buffer_tb is
+end write_buffer_tb;
 
-architecture arquitetura of bufferTeste is
-    component buffer is
+architecture arquitetura of write_buffer_tb is
+    component write_buffer is
         port (
             data    : in std_logic_vector(31 downto 0);
             address : in    std_logic_vector(31 downto 0);
@@ -15,8 +14,7 @@ architecture arquitetura of bufferTeste is
             enable      : in    std_logic;
             ready_out   : out   std_logic;
             main_out    : out std_logic_vector(31 downto 0); 
-            adress_out  : out std_logic_vector(31 downto 0);
-
+            address_out  : out std_logic_vector(31 downto 0)
         );
     end component;    
 
@@ -35,44 +33,34 @@ architecture arquitetura of bufferTeste is
           );
       end component;
 
-    
-
-
-signal dataBuffer   : std_logic_vector (31 downto 0);
-signal adressBuffer : std_logic_vector (31 downto 0);
-signal data, adress : std_logic_vector (31 downto 0);
+signal data : std_logic_vector (31 downto 0);
 signal ready_in, ready_out, enable, rw : std_logic;
-signal main_out, adress_out : std_logic_vector (31 downto 0);
+signal main_out, address_out : std_logic_vector (31 downto 0);
+    signal address: std_logic_vector(31 downto 0);
 
 begin
     mm : main_memory generic map (filename => "./memory_init.txt")
-    port map (data, address, rw, enable, ready_in);
-    bfer : buffer port map (data, address, ready_in, enable, ready_out, main_out, adress_out);
+    port map (main_out, address_out, rw, enable, ready_in);
+    bfer : write_buffer port map (data, address, ready_in, enable, ready_out, main_out, address_out);
     test  : process
 begin
-    for i in 49280 to 49288 loop
-      address <= std_logic_vector(to_unsigned(i, 32)); 
+  enable <= '1';
+  rw <= '1';
+  wait for 80 ns;
+  for i in 1000 to 1001 loop
+      address <= std_logic_vector(to_unsigned(i, 32));
       data <= std_logic_vector(to_unsigned(i, 32));
-      wait until ready = '1';
-      -- wait for 800 ns;
+      -- wait until ready_out = '1';
+      wait for 5 ns;
+    end loop;
+
+    for i in 2000 to 2001 loop
+      address <= std_logic_vector(to_unsigned(i, 32));
+      data <= std_logic_vector(to_unsigned(i, 32));
+      -- wait until ready_out = '1';
+      wait for 25 ns;
+
     end loop;
     std.env.finish;
   end process test;
 end architecture;
-
---begin
-  --  main_out <= dataBuffer
-    --address <= adressBuffer
-
-  --process (ready_in, address, dados)
-  --begin
-    --if empty && ready_in then
-      --  dataBuffer  <= data
-        --adressBuffer <= adress
-       -- ready_out <= 1                             
-    --else 
-      --  ready_out <=0
-    
-    --end if;
-  --end process;
---end arquitetura;

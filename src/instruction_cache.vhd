@@ -120,6 +120,8 @@ begin
         mm_address <= address(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
         if rising_edge(mm_ready) then
         report "assignemnts: " & integer'image(assignements);
+        -- divido por 4 devido aos bytes. assignments endereca palavra ao inves
+        -- de bytes
         cache(block_offset).data(assignements/4) <= mm_data;
         cache(block_offset).tag                  <= address(15 downto 14);
         mm_address                               <= address(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
