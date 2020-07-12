@@ -72,14 +72,14 @@ begin
     for i in 128 to 136 loop  -- esperase que entre no block 1 do conjutno 2
       RW     <= '0';
       ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-      report "128";
+      wait until ready = '1';
     end loop;
 
     for i in 57472 to 57480 loop
       -- esperase que entre no block 0 do conjutno 2, dando deplace no bloco anterior
       RW     <= '0';
       ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-      report "5742";
+      wait until ready = '1';
     end loop;
     report "terminou tudo";
 

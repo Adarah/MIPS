@@ -106,6 +106,7 @@ begin
       current_state <= next_state;
       prev_address  <= ADDR32;
       prev_data     <= DATA_IN;
+      -- report to_hstring(temp);
     end if;
   end process;
 
@@ -213,14 +214,12 @@ begin
           end if;
 
         elsif cache(conjunto_offset)(1).LRU = '1' then
-          report "allocate bloco 2";
           if rising_edge(mm_ready) then  -- se hit no bloco 2
-            report "allocate no bloco 2";
             report "assignemnts: " & integer'image(assignements);
             cache(conjunto_offset)(1).data(assignements/4) <= mm_data;
             cache(conjunto_offset)(1).tag                  <= ADDR32(15 downto 13);
             mm_address                                     <= ADDR32(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
-            if assignements > 4 * (cache_line'length - 1) then
+            if assignements >= 4 * (cache_line'length - 1) then
               cache(conjunto_offset)(1).valid <= '1';
               next_state                      <= COMPARE_TAG;
               assignements                    := 0;
