@@ -46,6 +46,9 @@ endif
 data_cache_test:
 	$(GHDL) -e $(GHDLFLAGS) data_cache_tb
 	$(GHDL) -r $(GHDLFLAGS) data_cache_tb --wave=$(WORKDIR)/$@.ghw
+ifeq ($(VISUAL), 1)
+	gtkwave $(WORKDIR)/$@.ghw
+endif
 
 buffer_test:
 	$(GHDL) -e $(GHDLFLAGS) write_buffer_tb
