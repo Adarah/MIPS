@@ -4,7 +4,8 @@ use IEEE.numeric_std.all;
 
 entity data_cache is
   port (
-    data   : inout std_logic_vector(31 downto 0);
+    data_in   : in std_logic_vector(31 downto 0);
+    data_out   : out std_logic_vector(31 downto 0);
     ADDR32 : in    std_logic_vector(31 downto 0);
     RW     : in    std_logic;           -- 0 para Read, 1 para Write
     ENABLE : in    std_logic;
@@ -62,7 +63,6 @@ architecture arquitetura of data_cache is
     LRU   => '1'
     );
 
-
   signal cache      : cache_type := (others => (others => empty_block));  --inicializa o cache com todos os blocos vazios
   -- main memory signals
   signal mm_data    : word_type;
@@ -78,8 +78,6 @@ architecture arquitetura of data_cache is
   signal changed       : std_logic;
   signal prev_address  : std_logic_vector(31 downto 0);
   signal prev_data     : std_logic_vector(31 downto 0);
-
-
 
   signal temp : std_logic_vector(2 downto 0);
 
@@ -102,23 +100,24 @@ begin
               enable  => enable,
               ready   => mm_ready);
 
-  state_change : process(clk, enable, changed) is
+  state_change : process(clk, enable, addr32, data_in, data_out) is
   begin
     if enable = '1' and rising_edge(clk) then
       current_state <= next_state;
       prev_address  <= ADDR32;
-      prev_data     <= DATA;
+      prev_data     <= DATA_IN;
     end if;
   end process;
 
   tag             <= ADDR32(15 downto 13);
   conjunto_offset <= to_integer(unsigned(ADDR32(12 downto 6)));
   word_offset     <= to_integer(unsigned(ADDR32(5 downto 2)));
-  changed         <= '0' when prev_address = ADDR32 and prev_data = DATA else '1';
+  changed         <= '0' when prev_address = ADDR32 and prev_data = DATA_IN else '1';
 
   actions : process(clk, current_state, mm_ready) is
     variable assignements : integer range 0 to 64 := 0;
   begin
+
     case current_state is
       when IDLE =>
         ready <= '1';
@@ -133,12 +132,13 @@ begin
         if cache(conjunto_offset)(0).valid = '1' and cache(conjunto_offset)(0).tag = tag then  -- se hit no bloco 1
           -- report "estado do buffer: " & to_string(buffer_cheio);
           if RW = '0' then
-            report "enviando isso para data: " & to_hstring(cache(conjunto_offset)(0).data(word_offset));
-            data       <= cache(conjunto_offset)(0).data(word_offset);
+            -- report "enviando isso para data: " & to_hstring(cache(conjunto_offset)(0).data(word_offset));
+            data_out       <= cache(conjunto_offset)(0).data(word_offset);
             report "HIT! Read No bloco 0 do conjunto";
           elsif RW = '1' then
-            report "data na escrita: " & to_hstring(data);
-            cache(conjunto_offset)(0).data(word_offset) <= data;
+            -- report "data na escrita: " & to_hstring(data_in);
+            -- data <= (others => 'Z');
+            cache(conjunto_offset)(0).data(word_offset) <= data_in;
             report "escrita";
           else
             report "RW nao eh nem 0 nem 1";
@@ -146,10 +146,10 @@ begin
 
         elsif cache(conjunto_offset)(1).valid = '1' and cache(conjunto_offset)(1).tag = tag then  -- se hit no bloco 2
           if RW = '0' then
-            -- data       <= cache(conjunto_offset)(1).data(word_offset);
+            data_OUT       <= cache(conjunto_offset)(1).data(word_offset);
             report "HIT! Read No bloco 1 do conjunto";
           elsif RW = '1' then
-            cache(conjunto_offset)(1).data(word_offset) <= data;
+            cache(conjunto_offset)(1).data(word_offset) <= data_IN;
           else
             report "RW nao eh nem 0 nem 1";
           end if;
@@ -162,7 +162,7 @@ begin
         else
           report "MISS NA ESCRITA";
 
-            report "data na escrita: " & to_hstring(data);
+            report "data na escrita: " & to_hstring(data_IN);
 
           hit <= false;
         end if;
@@ -215,6 +215,7 @@ begin
         elsif cache(conjunto_offset)(1).LRU = '1' then
           report "allocate bloco 2";
           if rising_edge(mm_ready) then  -- se hit no bloco 2
+            report "allocate no bloco 2";
             report "assignemnts: " & integer'image(assignements);
             cache(conjunto_offset)(1).data(assignements/4) <= mm_data;
             cache(conjunto_offset)(1).tag                  <= ADDR32(15 downto 13);
@@ -240,7 +241,7 @@ begin
         report "OTHERS";
         ready <= '0';
         hit   <= false;
-        data  <= (others => '0');
+        data_OUT  <= (others => '0');
 
 
     end case;
