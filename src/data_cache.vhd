@@ -4,15 +4,12 @@ use IEEE.numeric_std.all;
 
 entity data_cache is
   port (
-    DATA : inout std_logic_vector(31 downto 0);
-
-    ADDR32 : in std_logic_vector(31 downto 0);
-    RW     : in std_logic;              -- 0 para Read, 1 para Write
-    ENABLE : in std_logic;
-
-    READY : out std_logic;
-
-    clk : in std_logic
+    data   : inout std_logic_vector(31 downto 0);
+    ADDR32 : in    std_logic_vector(31 downto 0);
+    RW     : in    std_logic;           -- 0 para Read, 1 para Write
+    ENABLE : in    std_logic;
+    READY  : out   std_logic;
+    clk    : in    std_logic
     );
 end entity;
 
@@ -48,9 +45,9 @@ architecture arquitetura of data_cache is
 
   type cache_type is array(0 to 127) of conjunto_type;  --do menor pro maior
 
-  signal write_buffer : word_type;
-  signal buffer_cheio  : std_logic := '0';
-  signal addr_buffer  : std_logic_vector(31 downto 0);
+  -- signal write_buffer : word_type;
+  -- signal buffer_cheio : std_logic := '0';
+  -- signal addr_buffer  : std_logic_vector(31 downto 0);
 
   -- DATA cache signals
   signal tag             : tag_type;
@@ -73,7 +70,8 @@ architecture arquitetura of data_cache is
   signal mm_ready   : std_logic;
 
   -- states
-  type state_type is (IDLE, COMPARE_TAG, ALLOCATE, IDLE_BUFFER_CHEIO, WRITE_BUFFER_CHEIO);
+  -- type state_type is (IDLE, COMPARE_TAG, ALLOCATE, IDLE_BUFFER_CHEIO, WRITE_BUFFER_CHEIO);
+  type state_type is (IDLE, COMPARE_TAG, ALLOCATE);
   signal current_state : state_type := IDLE;
   signal next_state    : state_type := IDLE;
   signal hit           : boolean    := false;
@@ -86,13 +84,17 @@ architecture arquitetura of data_cache is
   signal temp : std_logic_vector(2 downto 0);
 
 begin
+  -- with current_state select
+  --   temp <= "000" when IDLE,
+  --   "001"         when COMPARE_TAG,
+  --   "010"         when ALLOCATE,
+  --   "011"         when IDLE_BUFFER_CHEIO,
+  --   "100"         when others;
+
   with current_state select
     temp <= "000" when IDLE,
     "001"         when COMPARE_TAG,
-    "010"         when ALLOCATE,
-    "011"         when IDLE_BUFFER_CHEIO,
-    "100"   when others;
-
+    "010"         when others;
   mm : main_memory generic map (filename => "memory_init.txt")
     port map (data    => mm_data,
               address => mm_address,
@@ -104,7 +106,6 @@ begin
   begin
     if enable = '1' and rising_edge(clk) then
       current_state <= next_state;
-      report to_hstring(temp);
       prev_address  <= ADDR32;
       prev_data     <= DATA;
     end if;
@@ -127,93 +128,69 @@ begin
         end if;
       when COMPARE_TAG =>
         -- vai pra idle buffer cheio se o buffer estiver cheio
-        if cache(conjunto_offset)(0).valid = '1' and cache(conjunto_offset)(0).tag = tag then
-          report "estado do buffer: " & to_string(buffer_cheio);
+        next_state <= IDLE;
+        hit        <= true;
+        if cache(conjunto_offset)(0).valid = '1' and cache(conjunto_offset)(0).tag = tag then  -- se hit no bloco 1
+          -- report "estado do buffer: " & to_string(buffer_cheio);
           if RW = '0' then
+            report "enviando isso para data: " & to_hstring(cache(conjunto_offset)(0).data(word_offset));
             data       <= cache(conjunto_offset)(0).data(word_offset);
-            next_state <= IDLE;
-            hit        <= true;
             report "HIT! Read No bloco 0 do conjunto";
-
-          elsif RW = '1' and buffer_cheio = '0' then
-            next_state   <= IDLE_BUFFER_CHEIO;
-            hit          <= true;
-            buffer_cheio  <= '1';
-            write_buffer <= data;
-            addr_buffer  <= ADDR32;
-            report "HIT! Write No bloco 0 do conjunto, buffer livre";
-
-          elsif RW = '1' and buffer_cheio = '1' and rising_edge(clk) then
-            next_state <= WRITE_BUFFER_CHEIO;
-            hit        <= false;
-            report "HIT! Write No bloco 0 do conjunto, buffer CHEIO";
-
+          elsif RW = '1' then
+            report "data na escrita: " & to_hstring(data);
+            cache(conjunto_offset)(0).data(word_offset) <= data;
+            report "escrita";
           else
-            next_state <= IDLE;
-            report "o buffer esta cheio, mas nao eh boarda de subida de clock";
+            report "RW nao eh nem 0 nem 1";
           end if;
 
-        elsif cache(conjunto_offset)(1).valid = '1' and cache(conjunto_offset)(1).tag = tag then
+        elsif cache(conjunto_offset)(1).valid = '1' and cache(conjunto_offset)(1).tag = tag then  -- se hit no bloco 2
           if RW = '0' then
-            data       <= cache(conjunto_offset)(1).data(word_offset);
-            next_state <= IDLE;
-            hit        <= true;
+            -- data       <= cache(conjunto_offset)(1).data(word_offset);
             report "HIT! Read No bloco 1 do conjunto";
-
-          elsif RW = '1' and buffer_cheio = '0' then
-            next_state   <= IDLE_BUFFER_CHEIO;
-            hit          <= true;
-            buffer_cheio  <= '1';
-            write_buffer <= data;
-            addr_buffer  <= ADDR32;
-            report "HIT! Write No bloco 1 do conjunto, buffer livre";
-
-          elsif RW = '1' and buffer_cheio = '1' and next_state /= IDLE_BUFFER_CHEIO then
-            next_state <= WRITE_BUFFER_CHEIO;
-            hit        <= false;
-            report "HIT! Write No bloco 1 do conjunto, buffer CHEIO";
-
+          elsif RW = '1' then
+            cache(conjunto_offset)(1).data(word_offset) <= data;
           else
-            next_state <= COMPARE_TAG;
-            report "o buffer esta cheio, mas nao eh boarda de subida de clock";
+            report "RW nao eh nem 0 nem 1";
           end if;
-        else                            -- deu MISS.
+        elsif RW = '0' then                            -- deu MISS.
           ready      <= '0';
           next_state <= ALLOCATE;
-          -- mm_address <= ADDR32(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
           mm_address <= ADDR32(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
-          -- mm_address <= (others => '0');
           hit        <= false;
-          report "MISS :(";
+          report "MISS na leitura";
+        else
+          report "MISS NA ESCRITA";
 
+            report "data na escrita: " & to_hstring(data);
+
+          hit <= false;
         end if;
 
-      when IDLE_BUFFER_CHEIO =>
-        -- escreve na memoria principal. Pra qualquer acesso, voltar pro estado
-        -- compare_tag, exceto se o buffer ficar vazio, entao voltar pra IDLE
-        mm_address <= addr_buffer;
-        mm_data    <= write_buffer;
-        if changed = '1' then
-          ready <= '1';
-          next_state <= COMPARE_TAG;
-        end if;
-        if rising_edge(mm_ready) then
-          buffer_cheio <= '0';
-          next_state <= COMPARE_TAG;
-          ready <= '1';
-          report "operation: " & to_string(RW);
-        end if;
+        -- when IDLE_BUFFER_CHEIO =>
+        --   -- escreve na memoria principal. Pra qualquer acesso, voltar pro estado
+        --   -- compare_tag, exceto se o buffer ficar vazio, entao voltar pra IDLE
+        --   mm_address <= addr_buffer;
+        --   mm_data    <= write_buffer;
+        --   if changed = '1' then
+        --     ready <= '1';
+        --     next_state <= COMPARE_TAG;
+        --   end if;
+        --   if rising_edge(mm_ready) then
+        --     buffer_cheio <= '0';
+        --     next_state <= COMPARE_TAG;
+        --     ready <= '1';
+        --     report "operation: " & to_string(RW);
+        --   end if;
 
-      when WRITE_BUFFER_CHEIO =>
-        -- esperar ate o buffer ficar vazio, e ai voltar pro compare_tag -> idle_buffer_cheio
-        ready <= '0';
-        if rising_edge(mm_ready) then
-          report "ficou ponrot mm ready";
-          buffer_cheio <= '0';
-          next_state <= COMPARE_TAG;
-        end if;
-
-
+        -- when WRITE_BUFFER_CHEIO =>
+        --   -- esperar ate o buffer ficar vazio, e ai voltar pro compare_tag -> idle_buffer_cheio
+        --   ready <= '0';
+        --   if rising_edge(mm_ready) then
+        --     report "ficou ponrot mm ready";
+        --     buffer_cheio <= '0';
+        --     next_state <= COMPARE_TAG;
+        --   end if;
 
       when ALLOCATE =>
         mm_address <= ADDR32(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
@@ -237,7 +214,7 @@ begin
 
         elsif cache(conjunto_offset)(1).LRU = '1' then
           report "allocate bloco 2";
-          if rising_edge(mm_ready) then
+          if rising_edge(mm_ready) then  -- se hit no bloco 2
             report "assignemnts: " & integer'image(assignements);
             cache(conjunto_offset)(1).data(assignements/4) <= mm_data;
             cache(conjunto_offset)(1).tag                  <= ADDR32(15 downto 13);

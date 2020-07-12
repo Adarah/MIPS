@@ -34,45 +34,46 @@ begin
   test : process
   begin
 	enable <= '1';
-	for i in 49280 to 49288 loop
-	  RW     <= '0';  --testando para leitura -- 01234567 89ABCDEF 11111111
-	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-	  wait until ready = '1';
-	  report "ficou pronto";
--- wait for 800 ns;
-	end loop;
-	report "leu tudo certo";
+-- 	for i in 49280 to 49288 loop
+-- 	  RW     <= '0';  --testando para leitura -- 01234567 89ABCDEF 11111111
+-- 	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
+-- 	  wait until ready = '1';
+-- -- wait for 800 ns;
+-- 	end loop;
+-- 	report "leu tudo certo";
 
 	for i in 49280 to 49288 loop
 	  RW     <= '1';                    --testando para escrita
-	  DATA   <= x"FEDCBA98";
+	 DATA <= (others => '1');
 	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
 	  wait until ready = '1';
-	  report "terminou uma operacao de escrita";
--- wait for 800 ns;
+-- wait for 80 ns;
 	end loop;
+-- 	 report "terminou escrita";
+-- 	for i in 49280 to 49288 loop
+-- 	  RW     <= '0';  --testando para leitura após escrita --saida esperada FEDCBA98 FEDCBA98 FEDCBA98
+-- 	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
+-- 	  wait until ready = '1';
+-- -- wait for 800 ns;
+-- 	end loop;
 
-	for i in 49280 to 49288 loop
-	  RW     <= '0';  --testando para leitura após escrita --saida esperada FEDCBA98 FEDCBA98 FEDCBA98
-	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-	  wait until ready = '1';
--- wait for 800 ns;
-	end loop;
+-- 	 report "terminou de reler os writes";
+-- 	for i in 2000 to 2007 loop
+-- 	  RW     <= '1';                    --testando para miss na escrita
+-- 	  DATA   <= x"EEEEEEEE";
+-- 	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
+-- 	  wait until ready = '1';
+-- -- wait for 800 ns;
+-- 	end loop;
+-- 	 report "terminou write misses";
 
-	for i in 2000 to 2007 loop
-	  RW     <= '1';                    --testando para miss na escrita
-	  DATA   <= x"EEEEEEEE";
-	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-	  wait until ready = '1';
--- wait for 800 ns;
-	end loop;
-
-	for i in 2000 to 2007 loop
-	  RW     <= '0';  --testando para leitura após escrita (miss) --miss e depois -> EEEEEEEE EEEEEEEE
-	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
-	  wait until ready = '1';
--- wait for 800 ns;
-end loop;
+-- 	for i in 2000 to 2007 loop
+-- 	  RW     <= '0';  --testando para leitura após escrita (miss) --miss e depois -> EEEEEEEE EEEEEEEE
+-- 	  ADDR32 <= std_logic_vector(to_unsigned(i, 32));
+-- 	  wait until ready = '1';
+-- -- wait for 800 ns;
+-- end loop;
+-- 	 report "terminou tudo";
 
 std.env.finish;
   end process test;
