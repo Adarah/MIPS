@@ -10,7 +10,7 @@ architecture arquitetura of write_buffer_tb is
         port (
             data    : in std_logic_vector(31 downto 0);
             address : in    std_logic_vector(31 downto 0);
-            ready_in      : in    std_logic;
+            mm_ready_in      : in    std_logic;
             enable      : in    std_logic;
             ready_out   : out   std_logic;
             main_out    : out std_logic_vector(31 downto 0); 
@@ -50,8 +50,8 @@ begin
   for i in 1000 to 1001 loop
       address <= std_logic_vector(to_unsigned(i, 32));
       data <= std_logic_vector(to_unsigned(i, 32));
-      -- wait until ready_out = '1';
-      wait for 5 ns;
+      wait until ready_out = '1';
+      -- wait for 5 ns;
     end loop;
 
     for i in 2000 to 2001 loop

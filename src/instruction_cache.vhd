@@ -8,6 +8,7 @@ entity instruction_cache is
     address : in  std_logic_vector(31 downto 0);
     enable  : in  std_logic;
     ready   : out std_logic;
+    hit: out boolean;
     clk     : in  std_logic
     );
 end instruction_cache;
@@ -62,7 +63,7 @@ architecture arch of instruction_cache is
   type state_type is (IDLE, COMPARE_TAG, ALLOCATE);
   signal current_state : state_type := IDLE;
   signal next_state    : state_type := IDLE;
-  signal hit           : boolean    := false;
+  -- signal hit           : boolean    := false;
   -- signal assignements  : integer range 0 to 15 := 0;
   signal changed       : std_logic;
   signal prev_address  : std_logic_vector(31 downto 0);

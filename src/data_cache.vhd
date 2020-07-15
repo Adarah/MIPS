@@ -4,13 +4,14 @@ use IEEE.numeric_std.all;
 
 entity data_cache is
   port (
-    data_in   : in std_logic_vector(31 downto 0);
-    data_out   : out std_logic_vector(31 downto 0);
-    ADDR32 : in    std_logic_vector(31 downto 0);
-    RW     : in    std_logic;           -- 0 para Read, 1 para Write
-    ENABLE : in    std_logic;
-    READY  : out   std_logic;
-    clk    : in    std_logic
+    data_in  : in  std_logic_vector(31 downto 0);
+    data_out : out std_logic_vector(31 downto 0);
+    ADDR32   : in  std_logic_vector(31 downto 0);
+    RW       : in  std_logic;           -- 0 para Read, 1 para Write
+    ENABLE   : in  std_logic;
+    READY    : out std_logic;
+    hit      : out boolean;
+    clk      : in  std_logic
     );
 end entity;
 
@@ -74,7 +75,7 @@ architecture arquitetura of data_cache is
   type state_type is (IDLE, COMPARE_TAG, ALLOCATE);
   signal current_state : state_type := IDLE;
   signal next_state    : state_type := IDLE;
-  signal hit           : boolean    := false;
+  -- signal hit           : boolean    := false;
   signal changed       : std_logic;
   signal prev_address  : std_logic_vector(31 downto 0);
   signal prev_data     : std_logic_vector(31 downto 0);
@@ -106,7 +107,7 @@ begin
       current_state <= next_state;
       prev_address  <= ADDR32;
       prev_data     <= DATA_IN;
-      -- report to_hstring(temp);
+    -- report to_hstring(temp);
     end if;
   end process;
 
@@ -134,7 +135,7 @@ begin
           -- report "estado do buffer: " & to_string(buffer_cheio);
           if RW = '0' then
             -- report "enviando isso para data: " & to_hstring(cache(conjunto_offset)(0).data(word_offset));
-            data_out       <= cache(conjunto_offset)(0).data(word_offset);
+            data_out <= cache(conjunto_offset)(0).data(word_offset);
             report "HIT! Read No bloco 0 do conjunto";
           elsif RW = '1' then
             -- report "data na escrita: " & to_hstring(data_in);
@@ -147,14 +148,14 @@ begin
 
         elsif cache(conjunto_offset)(1).valid = '1' and cache(conjunto_offset)(1).tag = tag then  -- se hit no bloco 2
           if RW = '0' then
-            data_OUT       <= cache(conjunto_offset)(1).data(word_offset);
+            data_OUT <= cache(conjunto_offset)(1).data(word_offset);
             report "HIT! Read No bloco 1 do conjunto";
           elsif RW = '1' then
             cache(conjunto_offset)(1).data(word_offset) <= data_IN;
           else
             report "RW nao eh nem 0 nem 1";
           end if;
-        elsif RW = '0' then                            -- deu MISS.
+        elsif RW = '0' then             -- deu MISS.
           ready      <= '0';
           next_state <= ALLOCATE;
           mm_address <= ADDR32(31 downto 6) & std_logic_vector(to_unsigned(assignements, 6));
@@ -163,9 +164,10 @@ begin
         else
           report "MISS NA ESCRITA";
 
-            report "data na escrita: " & to_hstring(data_IN);
+          report "data na escrita: " & to_hstring(data_IN);
 
-          hit <= false;
+          hit <= true;  -- a unidade de controle nao liga se der miss de write no
+                        -- cache de dados
         end if;
 
       when ALLOCATE =>
@@ -213,9 +215,9 @@ begin
 
       when others =>
         report "OTHERS";
-        ready <= '0';
-        hit   <= false;
-        data_OUT  <= (others => '0');
+        ready    <= '0';
+        hit      <= false;
+        data_OUT <= (others => '0');
 
 
     end case;

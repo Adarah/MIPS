@@ -6,7 +6,7 @@ entity write_buffer is
   port (
     data        : in  std_logic_vector(31 downto 0);
     address     : in  std_logic_vector(31 downto 0);
-    ready_in    : in  std_logic;
+    mm_ready_in    : in  std_logic;
     enable      : in  std_logic;
     ready_out   : out std_logic;
     main_out    : out std_logic_vector(31 downto 0);
@@ -24,10 +24,10 @@ begin
   main_out    <= dataBuffer;
   address_out <= addressBuffer;
 
-  process (ready_in, address, data)
+  process (mm_ready_in, address, data)
   begin
     if enable = '1' then
-      if ready_in = '1' then
+      if mm_ready_in = '1' then
         dataBuffer <= data;
         addressBuffer <= address;
         empty <= '1';

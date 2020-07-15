@@ -51,7 +51,7 @@ architecture behavioural of main_memory is
 
   signal memory : memory_type := init(fname => "./memory_init.txt");
 begin
-  process (enable, address, rw)
+  process (enable, data, address, rw)
   begin
     if enable then
       if rw = '0' then
