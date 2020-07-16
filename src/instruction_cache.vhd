@@ -9,26 +9,29 @@ entity instruction_cache is
     enable  : in  std_logic;
     ready   : out std_logic;
     hit: out boolean;
+    mm_data: in std_logic_vector(31 downto 0);
+    mm_address: out std_logic_vector(31 downto 0);
+    mm_ready: in std_logic;
     clk     : in  std_logic
     );
 end instruction_cache;
 
 architecture arch of instruction_cache is
 
-  component main_memory is
-    generic (
-      filename   : in string;
-      read_time  : in time := 40 ns;
-      write_time : in time := 40 ns
-      );
-    port (
-      data    : inout std_logic_vector(31 downto 0);
-      address : in    std_logic_vector(31 downto 0);
-      rw      : in    std_logic;
-      enable  : in    std_logic;
-      ready   : out   std_logic
-      );
-  end component;
+  -- component main_memory is
+  --   generic (
+  --     filename   : in string;
+  --     read_time  : in time := 40 ns;
+  --     write_time : in time := 40 ns
+  --     );
+  --   port (
+  --     data    : inout std_logic_vector(31 downto 0);
+  --     address : in    std_logic_vector(31 downto 0);
+  --     rw      : in    std_logic;
+  --     enable  : in    std_logic;
+  --     ready   : out   std_logic
+  --     );
+  -- end component;
 
   subtype word_type is std_logic_vector(31 downto 0);
   subtype tag_type is std_logic_vector(1 downto 0);
@@ -55,9 +58,9 @@ architecture arch of instruction_cache is
   signal cache : cache_type := (others => empty_block);
 
   -- main memory signals
-  signal mm_data    : word_type;
-  signal mm_address : std_logic_vector(31 downto 0);
-  signal mm_ready   : std_logic;
+  -- signal mm_data    : word_type;
+  -- signal mm_address : std_logic_vector(31 downto 0);
+  -- signal mm_ready   : std_logic;
 
   -- states
   type state_type is (IDLE, COMPARE_TAG, ALLOCATE);
@@ -68,12 +71,12 @@ architecture arch of instruction_cache is
   signal changed       : std_logic;
   signal prev_address  : std_logic_vector(31 downto 0);
 begin
-  mm : main_memory generic map (filename => "memory_init.txt")
-    port map (data    => mm_data,
-              address => mm_address,
-              rw      => '0',
-              enable  => enable,
-              ready   => mm_ready);
+  -- mm : main_memory generic map (filename => "memory_init.txt")
+  --   port map (data    => mm_data,
+  --             address => mm_address,
+  --             rw      => '0',
+  --             enable  => enable,
+  --             ready   => mm_ready);
 
   state_change : process(clk, enable, changed) is
   begin

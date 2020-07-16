@@ -11,25 +11,28 @@ entity data_cache is
     ENABLE   : in  std_logic;
     READY    : out std_logic;
     hit      : out boolean;
+    mm_data: in std_logic_vector(31 downto 0);
+    mm_address: out std_logic_vector(31 downto 0);
+    mm_ready: in std_logic;
     clk      : in  std_logic
     );
 end entity;
 
 architecture arquitetura of data_cache is
-  component main_memory is
-    generic (
-      filename   : in string;
-      read_time  : in time := 40 ns;
-      write_time : in time := 40 ns
-      );
-    port (
-      data    : inout std_logic_vector(31 downto 0);
-      address : in    std_logic_vector(31 downto 0);
-      rw      : in    std_logic;
-      enable  : in    std_logic;
-      ready   : out   std_logic
-      );
-  end component;
+  -- component main_memory is
+  --   generic (
+  --     filename   : in string;
+  --     read_time  : in time := 40 ns;
+  --     write_time : in time := 40 ns
+  --     );
+  --   port (
+  --     data    : inout std_logic_vector(31 downto 0);
+  --     address : in    std_logic_vector(31 downto 0);
+  --     rw      : in    std_logic;
+  --     enable  : in    std_logic;
+  --     ready   : out   std_logic
+  --     );
+  -- end component;
 
   subtype word_type is std_logic_vector(31 downto 0);  -- word de 32 bits
   subtype tag_type is std_logic_vector(2 downto 0);    -- tag de 3 bits
@@ -66,9 +69,9 @@ architecture arquitetura of data_cache is
 
   signal cache      : cache_type := (others => (others => empty_block));  --inicializa o cache com todos os blocos vazios
   -- main memory signals
-  signal mm_data    : word_type;
-  signal mm_address : std_logic_vector(31 downto 0);
-  signal mm_ready   : std_logic;
+  -- signal mm_data    : word_type;
+  -- signal mm_address : std_logic_vector(31 downto 0);
+  -- signal mm_ready   : std_logic;
 
   -- states
   -- type state_type is (IDLE, COMPARE_TAG, ALLOCATE, IDLE_BUFFER_CHEIO, WRITE_BUFFER_CHEIO);
@@ -94,12 +97,12 @@ begin
     temp <= "000" when IDLE,
     "001"         when COMPARE_TAG,
     "010"         when others;
-  mm : main_memory generic map (filename => "memory_init.txt")
-    port map (data    => mm_data,
-              address => mm_address,
-              rw      => RW,
-              enable  => enable,
-              ready   => mm_ready);
+  -- mm : main_memory generic map (filename => "memory_init.txt")
+  --   port map (data    => mm_data,
+  --             address => mm_address,
+  --             rw      => RW,
+  --             enable  => enable,
+  --             ready   => mm_ready);
 
   state_change : process(clk, enable, addr32, data_in, data_out) is
   begin
